@@ -2,14 +2,14 @@
 name = "duration-string"
 description = "string to duration and visa-versa lib. format is [0-9]+(ms|[smhdwy]) such as 100ms, 1s, 2h, 1y"
 documentation = "https://docs.rs/duration-string"
-readme = "README.md"
+readme = "readme.md"
 repository = "https://github.com/Ronniskansing/duration-string"
 license = "MIT"
 license-file = "LICENSE"
 keywords = ["duration"]
 categories = ["date-and-time"]
 exclude = ["coverage/**/*"]
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Ronni Skansing <rskansing@gmail.com>"]
 edition = "2018"
 
