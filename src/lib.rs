@@ -28,11 +28,11 @@
 //! duration-string = { version = "0.0.1", features = ["serde_support"] }
 //! - Add derive to struct
 //! ```ignore
-//! // use serde::{Deserialize, Serialize};
-//! // #[derive(Serialize, Deserialize)]
-//! // struct Foo {
-//! //  duration: DurationString
-//! // }
+//! use serde::{Deserialize, Serialize};
+//! #[derive(Serialize, Deserialize)]
+//! struct Foo {
+//!  duration: DurationString
+//! }
 //! ```
 
 #[cfg(feature = "serde_support")]
