@@ -1,10 +1,7 @@
 //! `duration-string` is a string to duration and visa-versa lib.
 //!
-//! [![Crates.io][crates-badge]][crates-url]
-//! [![MIT licensed][mit-badge]][mit-url]
-//!
-//! [crates-badge]: https://img.shields.io/crates/v/duration-string.svg
-//! [mit-url]: LICENSE
+//! ![Crates.io](https://img.shields.io/crates/v/duration-string.svg)
+//! ![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)
 //!
 //! Takes a string such as `100ms`, `2s`, `5m` and converts it into a `Duration`
 //! Takes a duration and makes it into string.
