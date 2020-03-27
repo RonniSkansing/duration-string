@@ -1,5 +1,11 @@
 //! `duration-string` is a string to duration and visa-versa lib.
 //!
+//! [![Crates.io][crates-badge]][crates-url]
+//! [![MIT licensed][mit-badge]][mit-url]
+//!
+//! [crates-badge]: https://img.shields.io/crates/v/duration-string.svg
+//! [mit-url]: LICENSE
+//!
 //! Takes a string such as `100ms`, `2s`, `5m` and converts it into a `Duration`
 //! Takes a duration and makes it into string.
 //!
@@ -9,16 +15,18 @@
 //!
 //! String to duration
 //! ```
+//! use std::convert::TryFrom;
 //! use duration_string::DurationString;
 //! use std::time::Duration;
-//! let d: Duration = DurationString::from(String::from("100ms")).into();
+//! let d: Duration = DurationString::try_from(String::from("100ms")).unwrap().into();
 //! assert_eq!(d, Duration::from_millis(100));
 //! ```
 //! duration to string
 //! ```
-//! use duration_string::DurationString;
+//! use std::convert::TryFrom;
+//! use duration_string::*;
 //! use std::time::Duration;
-//! let d: String = DurationString::from(Duration::from_millis(100)).into();
+//! let d: String = DurationString::try_from(Duration::from_millis(100)).unwrap().into();
 //! assert_eq!(d, String::from("100ms"));
 //! ```
 //!
@@ -38,6 +46,7 @@
 #[cfg(feature = "serde_support")]
 use serde::{Deserialize, Serialize};
 
+use std::convert::TryFrom;
 use std::fmt::Display;
 use std::time::Duration;
 
@@ -105,8 +114,10 @@ impl From<Duration> for DurationString {
     }
 }
 
-impl From<String> for DurationString {
-    fn from(duration: String) -> Self {
+impl TryFrom<String> for DurationString {
+    type Error = &'static str;
+
+    fn try_from(duration: String) -> Result<Self, Self::Error> {
         let mut format: String = String::from("");
         let mut period: String = String::from("");
 
@@ -118,56 +129,56 @@ impl From<String> for DurationString {
             }
         }
         match format.as_str() {
-            "ms" => DurationString {
+            "ms" => Ok(DurationString {
                 inner: Duration::from_millis(
                     period
                         .parse::<u64>()
                         .expect("failed to parse time duration"),
                 ),
-            },
-            "s" => DurationString {
+            }),
+            "s" => Ok(DurationString {
                 inner: Duration::from_secs(
                     period
                         .parse::<u64>()
                         .expect("failed to parse time duration"),
                 ),
-            },
-            "m" => DurationString {
+            }),
+            "m" => Ok(DurationString {
                 inner: Duration::from_secs(
                     period
                         .parse::<u64>()
                         .expect("failed to parse time duration"),
                 ) * MINUTE_IN_SECONDS,
-            },
-            "h" => DurationString {
+            }),
+            "h" => Ok(DurationString {
                 inner: Duration::from_secs(
                     period
                         .parse::<u64>()
                         .expect("failed to parse time duration"),
                 ) * HOUR_IN_SECONDS,
-            },
-            "d" => DurationString {
+            }),
+            "d" => Ok(DurationString {
                 inner: Duration::from_secs(
                     period
                         .parse::<u64>()
                         .expect("failed to parse time duration"),
                 ) * DAY_IN_SECONDS,
-            },
-            "w" => DurationString {
+            }),
+            "w" => Ok(DurationString {
                 inner: Duration::from_secs(
                     period
                         .parse::<u64>()
                         .expect("failed to parse time duration"),
                 ) * WEEK_IN_SECONDS,
-            },
-            "y" => DurationString {
+            }),
+            "y" => Ok(DurationString {
                 inner: Duration::from_secs(
                     period
                         .parse::<u64>()
                         .expect("failed to parse time duration"),
                 ) * YEAR_IN_SECONDS,
-            },
-            _ => panic!("missing TimeDuration format - must be [0-9]+(ms|[smhdwy]"),
+            }),
+            _ => Err("missing TimeDuration format - must be [0-9]+(ms|[smhdwy]"),
         }
     }
 }
@@ -179,114 +190,128 @@ mod tests {
 
     #[test]
     fn test_display_impl() {
-        let d = DurationString::from(Duration::from_millis(100));
-        assert_eq!("100ms", format!("{}", d));
+        let d = DurationString::try_from(Duration::from_millis(100));
+        assert_eq!("100ms", format!("{}", d.unwrap()));
     }
 
     #[test]
     fn test_from_duration() {
-        let d: String = DurationString::from(Duration::from_millis(100)).into();
+        let d: String = DurationString::try_from(Duration::from_millis(100))
+            .unwrap()
+            .into();
         assert_eq!(d, String::from("100ms"));
     }
     #[test]
     fn test_from_string_ms() {
-        let d: Duration = DurationString::from(String::from("100ms")).into();
+        let d: Duration = DurationString::try_from(String::from("100ms"))
+            .unwrap()
+            .into();
         assert_eq!(d, Duration::from_millis(100));
     }
 
     #[test]
     fn test_from_string_s() {
-        let d: Duration = DurationString::from(String::from("1s")).into();
+        let d: Duration = DurationString::try_from(String::from("1s")).unwrap().into();
         assert_eq!(d, Duration::from_secs(1));
     }
 
     #[test]
     fn test_from_string_m() {
-        let d: Duration = DurationString::from(String::from("1m")).into();
+        let d: Duration = DurationString::try_from(String::from("1m")).unwrap().into();
         assert_eq!(d, Duration::from_secs(60));
     }
 
     #[test]
     fn test_from_string_h() {
-        let d: Duration = DurationString::from(String::from("1h")).into();
+        let d: Duration = DurationString::try_from(String::from("1h")).unwrap().into();
         assert_eq!(d, Duration::from_secs(3600));
     }
 
     #[test]
     fn test_from_string_d() {
-        let d: Duration = DurationString::from(String::from("1d")).into();
+        let d: Duration = DurationString::try_from(String::from("1d")).unwrap().into();
         assert_eq!(d, Duration::from_secs(86_400));
     }
 
     #[test]
     fn test_from_string_w() {
-        let d: Duration = DurationString::from(String::from("1w")).into();
+        let d: Duration = DurationString::try_from(String::from("1w")).unwrap().into();
         assert_eq!(d, Duration::from_secs(604_800));
     }
 
     #[test]
     fn test_from_string_y() {
-        let d: Duration = DurationString::from(String::from("1y")).into();
+        let d: Duration = DurationString::try_from(String::from("1y")).unwrap().into();
         assert_eq!(d, Duration::from_secs(31_556_926));
     }
 
     #[test]
     fn test_into_string_ms() {
-        let d: String = DurationString::from(String::from("100ms")).into();
+        let d: String = DurationString::try_from(String::from("100ms"))
+            .unwrap()
+            .into();
         assert_eq!(d, "100ms");
     }
 
     #[test]
     fn test_into_string_s() {
-        let d: String = DurationString::from(String::from("1s")).into();
+        let d: String = DurationString::try_from(String::from("1s")).unwrap().into();
         assert_eq!(d, "1s");
     }
 
     #[test]
     fn test_into_string_m() {
-        let d: String = DurationString::from(String::from("1m")).into();
+        let d: String = DurationString::try_from(String::from("1m")).unwrap().into();
         assert_eq!(d, "1m");
     }
 
     #[test]
     fn test_into_string_h() {
-        let d: String = DurationString::from(String::from("1h")).into();
+        let d: String = DurationString::try_from(String::from("1h")).unwrap().into();
         assert_eq!(d, "1h");
     }
 
     #[test]
     fn test_into_string_d() {
-        let d: String = DurationString::from(String::from("1d")).into();
+        let d: String = DurationString::try_from(String::from("1d")).unwrap().into();
         assert_eq!(d, "1d");
     }
 
     #[test]
     fn test_into_string_w() {
-        let d: String = DurationString::from(String::from("1w")).into();
+        let d: String = DurationString::try_from(String::from("1w")).unwrap().into();
         assert_eq!(d, "1w");
     }
 
     #[test]
     fn test_into_string_y() {
-        let d: String = DurationString::from(String::from("1y")).into();
+        let d: String = DurationString::try_from(String::from("1y")).unwrap().into();
         assert_eq!(d, "1y");
     }
 
     #[test]
     fn test_into_string_overflow_unit() {
-        let d: String = DurationString::from(String::from("1000ms")).into();
+        let d: String = DurationString::try_from(String::from("1000ms"))
+            .unwrap()
+            .into();
         assert_eq!(d, "1s");
 
-        let d: String = DurationString::from(String::from("60000ms")).into();
+        let d: String = DurationString::try_from(String::from("60000ms"))
+            .unwrap()
+            .into();
         assert_eq!(d, "1m");
 
-        let d: String = DurationString::from(String::from("61000ms")).into();
+        let d: String = DurationString::try_from(String::from("61000ms"))
+            .unwrap()
+            .into();
         assert_eq!(d, "61s");
     }
 
     #[test]
-    #[should_panic]
     fn test_from_string_invalid_string() {
-        DurationString::from(String::from("1000x"));
+        match DurationString::try_from(String::from("1000x")) {
+            Ok(_) => assert!(false, "should have returned an Err"),
+            Err(_) => assert!(true),
+        }
     }
 }
