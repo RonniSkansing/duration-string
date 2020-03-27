@@ -23,7 +23,7 @@
 //! use std::convert::TryFrom;
 //! use duration_string::*;
 //! use std::time::Duration;
-//! let d: String = DurationString::try_from(Duration::from_millis(100)).unwrap().into();
+//! let d: String = DurationString::from(Duration::from_millis(100)).into();
 //! assert_eq!(d, String::from("100ms"));
 //! ```
 //!
