@@ -12,10 +12,9 @@
 //!
 //! String to duration
 //! ```
-//! use std::convert::TryFrom;
 //! use duration_string::DurationString;
 //! use std::time::Duration;
-//! let d: Duration = DurationString::try_from(String::from("100ms")).unwrap().into();
+//! let d: Duration = DurationString::from_string(String::from("100ms")).unwrap().into();
 //! assert_eq!(d, Duration::from_millis(100));
 //! ```
 //! duration to string
@@ -112,7 +111,7 @@ impl From<Duration> for DurationString {
 }
 
 impl TryFrom<String> for DurationString {
-    type Error = &'static str;
+    type Error = String;
 
     fn try_from(duration: String) -> Result<Self, Self::Error> {
         let mut format: String = String::from("");
@@ -125,58 +124,42 @@ impl TryFrom<String> for DurationString {
                 format.push(c);
             }
         }
-        match format.as_str() {
-            "ms" => Ok(DurationString {
-                inner: Duration::from_millis(
-                    period
-                        .parse::<u64>()
-                        .expect("failed to parse time duration"),
-                ),
-            }),
-            "s" => Ok(DurationString {
-                inner: Duration::from_secs(
-                    period
-                        .parse::<u64>()
-                        .expect("failed to parse time duration"),
-                ),
-            }),
-            "m" => Ok(DurationString {
-                inner: Duration::from_secs(
-                    period
-                        .parse::<u64>()
-                        .expect("failed to parse time duration"),
-                ) * MINUTE_IN_SECONDS,
-            }),
-            "h" => Ok(DurationString {
-                inner: Duration::from_secs(
-                    period
-                        .parse::<u64>()
-                        .expect("failed to parse time duration"),
-                ) * HOUR_IN_SECONDS,
-            }),
-            "d" => Ok(DurationString {
-                inner: Duration::from_secs(
-                    period
-                        .parse::<u64>()
-                        .expect("failed to parse time duration"),
-                ) * DAY_IN_SECONDS,
-            }),
-            "w" => Ok(DurationString {
-                inner: Duration::from_secs(
-                    period
-                        .parse::<u64>()
-                        .expect("failed to parse time duration"),
-                ) * WEEK_IN_SECONDS,
-            }),
-            "y" => Ok(DurationString {
-                inner: Duration::from_secs(
-                    period
-                        .parse::<u64>()
-                        .expect("failed to parse time duration"),
-                ) * YEAR_IN_SECONDS,
-            }),
-            _ => Err("missing TimeDuration format - must be [0-9]+(ms|[smhdwy]"),
+
+        match period.parse::<u64>() {
+            Ok(period) => match format.as_str() {
+                "ms" => Ok(DurationString {
+                    inner: Duration::from_millis(period),
+                }),
+                "s" => Ok(DurationString {
+                    inner: Duration::from_secs(period),
+                }),
+                "m" => Ok(DurationString {
+                    inner: Duration::from_secs(period) * MINUTE_IN_SECONDS,
+                }),
+                "h" => Ok(DurationString {
+                    inner: Duration::from_secs(period) * HOUR_IN_SECONDS,
+                }),
+                "d" => Ok(DurationString {
+                    inner: Duration::from_secs(period) * DAY_IN_SECONDS,
+                }),
+                "w" => Ok(DurationString {
+                    inner: Duration::from_secs(period) * WEEK_IN_SECONDS,
+                }),
+                "y" => Ok(DurationString {
+                    inner: Duration::from_secs(period) * YEAR_IN_SECONDS,
+                }),
+                _ => Err(String::from(
+                    "missing TimeDuration format - must be [0-9]+(ms|[smhdwy]",
+                )),
+            },
+            Err(err) => Err(err.to_string()),
         }
+    }
+}
+
+impl DurationString {
+    pub fn from_string(duration: String) -> Result<Self, String> {
+        DurationString::try_from(duration)
     }
 }
 
@@ -184,6 +167,22 @@ impl TryFrom<String> for DurationString {
 mod tests {
     use super::*;
     use std::time::Duration;
+
+    #[test]
+    fn test_string_int_overflow() {
+        match DurationString::from_string(String::from("ms")) {
+            Ok(_) => assert!(false, "parsing \"ms\" should fail"),
+            Err(_) => assert!(true),
+        }
+    }
+
+    #[test]
+    // fn test_from_string
+    #[test]
+    fn test_from_string() {
+        let d = DurationString::from_string(String::from("100ms"));
+        assert_eq!("100ms", format!("{}", d.unwrap()));
+    }
 
     #[test]
     fn test_display_impl() {

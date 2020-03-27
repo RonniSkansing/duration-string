@@ -4,7 +4,6 @@ description = "string to duration and visa-versa lib. format is [0-9]+(ms|[smhdw
 documentation = "https://docs.rs/duration-string"
 readme = "readme.md"
 repository = "https://github.com/Ronniskansing/duration-string"
-license = "MIT"
 license-file = "LICENSE"
 keywords = ["duration"]
 categories = ["date-and-time"]
