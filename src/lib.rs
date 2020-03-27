@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn test_string_int_overflow() {
         match DurationString::from_string(String::from("ms")) {
-            Ok(_) => assert!(false, "parsing 'ms' should fail"),
+            Ok(_) => assert!(false, "parsing \"ms\" should fail"),
             Err(_) => assert!(true),
         }
     }
