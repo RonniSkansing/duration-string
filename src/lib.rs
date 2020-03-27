@@ -5,9 +5,6 @@
 //!
 //! The string format is [0-9]+(ms|[smhdwy
 //!
-//! ## Feature Flags
-//! TODO Add flags to add serde::{Deserialize, Serialize}; on DurationString
-//!
 //! ## Example
 //!
 //! String to duration
@@ -30,7 +27,7 @@
 //! - Add `serde_support` to the dependency
 //! duration-string = { version = "0.0.1", features = ["serde_support"] }
 //! - Add derive to struct
-//! ```
+//! ```ignore
 //! // use serde::{Deserialize, Serialize};
 //! // #[derive(Serialize, Deserialize)]
 //! // struct Foo {

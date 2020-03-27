@@ -5,7 +5,7 @@
 Takes a string such as `100ms`, `2s`, `5m` and converts it into a `Duration`
 Takes a duration and makes it into string.
 
-The string format is [0-9]+(ms|[smhdwy
+The string format is `[0-9]+(ms|[smhdwy]`
 
 ### Example
 
@@ -29,10 +29,10 @@ You can enable serialize/unserialize support by adding the feature `serde_suppor
 - Add `serde_support` to the dependency
 duration-string = { version = "0.0.1", features = ["serde_support"] }
 - Add derive to struct
-```ignore
-use serde::{Deserialize, Serialize};
-#[derive(Serialize, Deserialize)]
-struct Foo {
-  duration: DurationString
-}
+```rust
+// use serde::{Deserialize, Serialize};
+// #[derive(Serialize, Deserialize)]
+// struct Foo {
+//  duration: DurationString
+// }
 ```
