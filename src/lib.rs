@@ -25,7 +25,7 @@
 //! ## Serde support
 //! You can enable serialize/unserialize support by adding the feature `serde_support`
 //! - Add `serde_support` to the dependency
-//! duration-string = { version = "0.0.1", features = ["serde_support"] }
+//! `duration-string = { version = "0.0.1", features = ["serde_support"] }`
 //! - Add derive to struct
 //! ```ignore
 //! use serde::{Deserialize, Serialize};
