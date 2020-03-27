@@ -7,9 +7,6 @@ Takes a duration and makes it into string.
 
 The string format is [0-9]+(ms|[smhdwy
 
-### Feature Flags
-TODO Add flags to add serde::{Deserialize, Serialize}; on DurationString
-
 ### Example
 
 String to duration
