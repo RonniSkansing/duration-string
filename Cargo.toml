@@ -1,0 +1,22 @@
+[package]
+name = "duration-string"
+version = "0.0.1"
+authors = ["Ronni Skansing <rskansing@gmail.com>"]
+edition = "2018"
+
+[features]
+serde_support = ["serde"]
+
+[dependencies]
+serde = { version = "1.0.105", optional = true }
+
+# testing and doc'ing
+# cargo instlal cargo-tarpaulin
+# cargo install cargo-watch
+
+# cargo watch -x "tarpaulin --run-types Tests --out Lcov --output-dir coverage"
+# cargo watch -x "tarpaulin --run-types Tests --out Lcov --output-dir coverage; cargo test --doc; cargo doc" # VSCODE - Coverage Gutters
+
+# update readme
+# cargo install cargo-readme
+# cargo readme > readme.md
