@@ -102,7 +102,6 @@ impl Into<Duration> for DurationString {
 impl Into<String> for DurationString {
     fn into(self) -> String {
         let ms = self.inner.as_millis();
-        println!("{}", ms);
         if ms % YEAR_IN_MILLI == 0 {
             return (ms / YEAR_IN_MILLI).to_string() + "y";
         }
