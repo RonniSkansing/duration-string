@@ -27,23 +27,35 @@
 //! ```
 //!
 //! ## Serde support
-//! You can enable serialize/unserialize support by adding the feature `serde_support`
-//! - Add `serde_support` to the dependency
-//! `duration-string = { version = "0.0.1", features = ["serde_support"] }`
+//! You can enable serialize/unserialize support by adding the feature `serde`
+//! - Add `serde` to the dependency
+//! `duration-string = { version = "0.0.1", features = ["serde"] }`
 //! - Add derive to struct
-//! ```ignore
+//! ```
+//! # #[cfg(feature = "serde")]
 //! use serde::{Deserialize, Serialize};
+//! # #[cfg(feature = "serde")]
+//! use serde_json;
+//! use duration_string::DurationString;
+//!
 //! #[derive(Serialize, Deserialize)]
-//! struct Foo {
-//!  duration: DurationString
+//! struct SerdeSupport {
+//!     t: DurationString,
 //! }
+//! let s = SerdeSupport {
+//!     t: DurationString::from_string(String::from("1m")).unwrap(),
+//! };
+//! assert_eq!(r#"{"t":"1m"}"#, serde_json::to_string(&s).unwrap());
 //! ```
 
-#[cfg(feature = "serde_support")]
-use serde::{Deserialize, Serialize};
-
+#[cfg(feature = "serde")]
+use serde::de::Unexpected;
 use std::convert::TryFrom;
+#[cfg(feature = "serde")]
+use std::fmt;
 use std::fmt::Display;
+#[cfg(feature = "serde")]
+use std::marker::PhantomData;
 use std::time::Duration;
 
 const YEAR_IN_MILLI: u128 = 31_556_926_000;
@@ -60,9 +72,18 @@ const WEEK_IN_SECONDS: u32 = 604_800;
 const YEAR_IN_SECONDS: u32 = 31_556_926;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct DurationString {
     inner: Duration,
+}
+
+impl DurationString {
+    pub fn new(duration: Duration) -> DurationString {
+        DurationString { inner: duration }
+    }
+
+    pub fn from_string(duration: String) -> Result<Self, String> {
+        DurationString::try_from(duration)
+    }
 }
 
 impl Display for DurationString {
@@ -157,16 +178,95 @@ impl TryFrom<String> for DurationString {
     }
 }
 
-impl DurationString {
-    pub fn from_string(duration: String) -> Result<Self, String> {
-        DurationString::try_from(duration)
+#[cfg(feature = "serde")]
+struct DurationStringVisitor {
+    marker: PhantomData<fn() -> DurationString>,
+}
+
+#[cfg(feature = "serde")]
+impl DurationStringVisitor {
+    fn new() -> Self {
+        Self {
+            marker: PhantomData,
+        }
     }
 }
 
+#[cfg(feature = "serde")]
+impl<'de> serde::de::Visitor<'de> for DurationStringVisitor {
+    type Value = DurationString;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("string")
+    }
+
+    fn visit_str<E>(self, string: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        match DurationString::from_string(string.to_string()) {
+            Ok(d) => Ok(d),
+            Err(s) => Err(serde::de::Error::invalid_value(
+                Unexpected::Str(s.as_str()),
+                &self,
+            )),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for DurationString {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_str(DurationStringVisitor::new())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for DurationString {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Duration;
+    #[cfg(feature = "serde")]
+    use serde::{Deserialize, Serialize};
+    #[cfg(feature = "serde")]
+    use serde_json;
+
+    #[cfg(feature = "serde")]
+    #[derive(Serialize, Deserialize)]
+    struct SerdeSupport {
+        d: DurationString,
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_serialize_trait() {
+        let s = SerdeSupport {
+            d: DurationString::from_string(String::from("1m")).unwrap(),
+        };
+        assert_eq!(r#"{"d":"1m"}"#, serde_json::to_string(&s).unwrap());
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_deserialize_trait() {
+        let s = r#"{"d":"2m"}"#;
+        match serde_json::from_str::<SerdeSupport>(s) {
+            Ok(v) => {
+                assert_eq!(v.d.to_string(), "2m");
+            }
+            Err(err) => assert!(false, format!("failed to deserialize: {}", err)),
+        }
+    }
 
     #[test]
     fn test_string_int_overflow() {
@@ -185,7 +285,7 @@ mod tests {
     }
 
     #[test]
-    fn test_display_impl() {
+    fn test_display_trait() {
         let d = DurationString::try_from(Duration::from_millis(100));
         assert_eq!("100ms", format!("{}", d.unwrap()));
     }

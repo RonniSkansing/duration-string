@@ -8,15 +8,21 @@ license-file = "LICENSE"
 keywords = ["duration"]
 categories = ["date-and-time"]
 exclude = ["coverage/**/*"]
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Ronni Skansing <rskansing@gmail.com>"]
 edition = "2018"
 
 [features]
-serde_support = ["serde"]
+# default = ["serde"]
 
 [dependencies]
-serde = { version = "1.0.105", optional = true }
+serde = { version = "1.0.105", optional = true, features = ["derive"] }
+
+[dev-dependencies]
+serde_json = { version = "1.0.49" }
+
+[profile.test]
+
 
 # testing and doc'ing
 # cargo instlal cargo-tarpaulin
