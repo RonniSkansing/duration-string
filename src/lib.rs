@@ -147,6 +147,9 @@ impl TryFrom<String> for DurationString {
 
         match period.parse::<u64>() {
             Ok(period) => match format.as_str() {
+                "ns" => Ok(DurationString {
+                    inner: Duration::from_nanos(period),
+                }),
                 "ms" => Ok(DurationString {
                     inner: Duration::from_millis(period),
                 }),
