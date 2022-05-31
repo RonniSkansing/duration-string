@@ -1,0 +1,5 @@
+make.exe --dry-run --always-make --keep-going --print-directory
+make.exe: Entering directory `c:/Users/mjdav/source/repos/Rust/sonotube/duration-string'
+cargo test --features="serde"
+make.exe: Leaving directory `c:/Users/mjdav/source/repos/Rust/sonotube/duration-string'
+ 
