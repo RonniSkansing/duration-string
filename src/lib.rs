@@ -32,9 +32,7 @@
 //! `duration-string = { version = "0.0.1", features = ["serde"] }`
 //! - Add derive to struct
 //! ```
-//! # #[cfg(feature = "serde")]
 //! use serde::{Deserialize, Serialize};
-//! # #[cfg(feature = "serde")]
 //! use serde_json;
 //! use duration_string::DurationString;
 //!
@@ -266,7 +264,7 @@ mod tests {
             Ok(v) => {
                 assert_eq!(v.d.to_string(), "2m");
             }
-            Err(err) => assert!(false, format!("failed to deserialize: {}", err)),
+            Err(err) => assert!(false, "failed to deserialize: {}", err),
         }
     }
 
@@ -278,7 +276,6 @@ mod tests {
         }
     }
 
-    #[test]
     // fn test_from_string
     #[test]
     fn test_from_string() {
