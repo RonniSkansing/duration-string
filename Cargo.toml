@@ -1,6 +1,6 @@
 [package]
 name = "duration-string"
-description = "string to duration and visa-versa lib. format is [0-9]+(ms|[smhdwy]) such as 100ms, 1s, 2h, 1y"
+description = "string to duration and visa-versa lib. format is [0-9]+(ns|us|ms|[smhdwy]) such as 100ms, 1s, 2h, 1y"
 documentation = "https://docs.rs/duration-string"
 readme = "readme.md"
 repository = "https://github.com/Ronniskansing/duration-string"
@@ -8,8 +8,8 @@ license-file = "LICENSE"
 keywords = ["duration"]
 categories = ["date-and-time"]
 exclude = ["coverage/**/*"]
-version = "0.0.6"
-authors = ["Ronni Skansing <rskansing@gmail.com>"]
+version = "0.1.0"
+authors = ["Ronni Skansing <rskansing@gmail.com>", "Martin Davy <mjdavy@hotmail.com>"]
 edition = "2018"
 
 [features]
