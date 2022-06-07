@@ -8,7 +8,7 @@ license-file = "LICENSE"
 keywords = ["duration"]
 categories = ["date-and-time"]
 exclude = ["coverage/**/*"]
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Ronni Skansing <rskansing@gmail.com>", "Martin Davy <mjdavy@hotmail.com>"]
 edition = "2018"
 
