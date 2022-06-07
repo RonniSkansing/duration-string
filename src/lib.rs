@@ -6,7 +6,7 @@
 //! Takes a string such as `100ms`, `2s`, `5m` and converts it into a `Duration`
 //! Takes a duration and makes it into string.
 //!
-//! The string format is [0-9]+(ms|[smhdwy])
+//! The string format is [0-9]+(ms|us|ns|[smhdwy])
 //!
 //! ## Example
 //!
@@ -56,12 +56,14 @@ use std::fmt::Display;
 use std::marker::PhantomData;
 use std::time::Duration;
 
-const YEAR_IN_MILLI: u128 = 31_556_926_000;
-const WEEK_IN_MILLI: u128 = 604_800_000;
-const DAY_IN_MILLI: u128 = 86_400_000;
-const HOUR_IN_MILLI: u128 = 3_600_000;
-const MINUTE_IN_MILLI: u128 = 60_000;
-const SECOND_IN_MILLI: u128 = 1000;
+const YEAR_IN_NANO: u128 = 31_556_926_000_000_000;
+const WEEK_IN_NANO: u128 = 604_800_000_000_000;
+const DAY_IN_NANO: u128 = 86_400_000_000_000;
+const HOUR_IN_NANO: u128 = 3_600_000_000_000;
+const MINUTE_IN_NANO: u128 = 60_000_000_000;
+const SECOND_IN_NANO: u128 = 1000_000_000;
+const MILLISECOND_IN_NANO: u128 = 1000_000;
+const MICROSECOND_IN_NANO: u128 = 1000;
 
 const HOUR_IN_SECONDS: u32 = 3600;
 const MINUTE_IN_SECONDS: u32 = 60;
@@ -99,26 +101,32 @@ impl Into<Duration> for DurationString {
 
 impl Into<String> for DurationString {
     fn into(self) -> String {
-        let ms = self.inner.as_millis();
-        if ms % YEAR_IN_MILLI == 0 {
-            return (ms / YEAR_IN_MILLI).to_string() + "y";
+        let ns = self.inner.as_nanos();
+        if ns % YEAR_IN_NANO == 0 {
+            return (ns / YEAR_IN_NANO).to_string() + "y";
         }
-        if ms % WEEK_IN_MILLI == 0 {
-            return (ms / WEEK_IN_MILLI).to_string() + "w";
+        if ns % WEEK_IN_NANO == 0 {
+            return (ns / WEEK_IN_NANO).to_string() + "w";
         }
-        if ms % DAY_IN_MILLI == 0 {
-            return (ms / DAY_IN_MILLI).to_string() + "d";
+        if ns % DAY_IN_NANO == 0 {
+            return (ns / DAY_IN_NANO).to_string() + "d";
         }
-        if ms % HOUR_IN_MILLI == 0 {
-            return (ms / HOUR_IN_MILLI).to_string() + "h";
+        if ns % HOUR_IN_NANO == 0 {
+            return (ns / HOUR_IN_NANO).to_string() + "h";
         }
-        if ms % MINUTE_IN_MILLI == 0 {
-            return (ms / MINUTE_IN_MILLI).to_string() + "m";
+        if ns % MINUTE_IN_NANO == 0 {
+            return (ns / MINUTE_IN_NANO).to_string() + "m";
         }
-        if ms % SECOND_IN_MILLI == 0 {
-            return (ms / SECOND_IN_MILLI).to_string() + "s";
+        if ns % SECOND_IN_NANO == 0 {
+            return (ns / SECOND_IN_NANO).to_string() + "s";
         }
-        return ms.to_string() + "ms";
+        if ns % MILLISECOND_IN_NANO == 0 {
+            return (ns / MILLISECOND_IN_NANO).to_string() + "ms";
+        }
+        if ns % MICROSECOND_IN_NANO == 0 {
+            return (ns / MICROSECOND_IN_NANO).to_string() + "us";
+        }
+        return ns.to_string() + "ns";
     }
 }
 
@@ -145,6 +153,12 @@ impl TryFrom<String> for DurationString {
 
         match period.parse::<u64>() {
             Ok(period) => match format.as_str() {
+                "ns" => Ok(DurationString {
+                    inner: Duration::from_nanos(period),
+                }),
+                "us" => Ok(DurationString {
+                    inner: Duration::from_micros(period),
+                }),
                 "ms" => Ok(DurationString {
                     inner: Duration::from_millis(period),
                 }),
@@ -167,7 +181,7 @@ impl TryFrom<String> for DurationString {
                     inner: Duration::from_secs(period) * YEAR_IN_SECONDS,
                 }),
                 _ => Err(String::from(
-                    "missing TimeDuration format - must be [0-9]+(ms|[smhdwy]",
+                    "missing TimeDuration format - must be [0-9]+(ns|us|ms|[smhdwy]",
                 )),
             },
             Err(err) => Err(err.to_string()),
@@ -299,6 +313,21 @@ mod tests {
             .unwrap()
             .into();
         assert_eq!(d, Duration::from_millis(100));
+    }
+    #[test]
+    fn test_from_string_us() {
+        let d: Duration = DurationString::try_from(String::from("100us"))
+            .unwrap()
+            .into();
+        assert_eq!(d, Duration::from_micros(100));
+    }
+
+    #[test]
+    fn test_from_string_ns() {
+        let d: Duration = DurationString::try_from(String::from("100ns"))
+            .unwrap()
+            .into();
+        assert_eq!(d, Duration::from_nanos(100));
     }
 
     #[test]
