@@ -8,7 +8,7 @@
 Takes a string such as `100ms`, `2s`, `5m` and converts it into a `Duration`
 Takes a duration and makes it into string.
 
-The string format is [0-9]+(ms|[smhdwy])
+The string format is [0-9]+(ns|us|ms|[smhdwy])
 
 ### Example
 
