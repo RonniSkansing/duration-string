@@ -54,6 +54,7 @@ use std::fmt;
 use std::fmt::Display;
 #[cfg(feature = "serde")]
 use std::marker::PhantomData;
+use std::str::FromStr;
 use std::time::Duration;
 
 const YEAR_IN_NANO: u128 = 31_556_926_000_000_000;
@@ -140,6 +141,14 @@ impl TryFrom<String> for DurationString {
     type Error = String;
 
     fn try_from(duration: String) -> Result<Self, Self::Error> {
+        duration.parse()
+    }
+}
+
+impl FromStr for DurationString {
+    type Err = String;
+
+    fn from_str(duration: &str) -> Result<Self, Self::Err> {
         let mut format: String = String::from("");
         let mut period: String = String::from("");
 
