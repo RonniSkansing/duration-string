@@ -24,6 +24,9 @@
 //! use std::time::Duration;
 //! let d: String = DurationString::from(Duration::from_millis(100)).into();
 //! assert_eq!(d, String::from("100ms"));
+//! // Alternatively:
+//! let d: Duration = "100ms".parse::<DurationString>().unwrap().into();
+//! assert_eq!(d, Duration::from_millis(100));
 //! ```
 //!
 //! ## Serde support
