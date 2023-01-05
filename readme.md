@@ -8,7 +8,7 @@
 Takes a string such as `100ms`, `2s`, `5m` and converts it into a `Duration`
 Takes a duration and makes it into string.
 
-The string format is [0-9]+(ns|us|ms|[smhdwy])
+The string format is `[0-9]+(ns|us|ms|[smhdwy])`
 
 ### Example
 
@@ -18,6 +18,9 @@ use std::convert::TryFrom;
 use duration_string::DurationString;
 use std::time::Duration;
 let d: Duration = DurationString::try_from(String::from("100ms")).unwrap().into();
+assert_eq!(d, Duration::from_millis(100));
+// Alternatively:
+let d: Duration = "100ms".parse::<DurationString>().unwrap().into();
 assert_eq!(d, Duration::from_millis(100));
 ```
 duration to string
