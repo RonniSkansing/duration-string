@@ -3,10 +3,11 @@
 //! ![Crates.io](https://img.shields.io/crates/v/duration-string.svg)
 //! ![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)
 //!
-//! Takes a string such as `100ms`, `2s`, `5m` and converts it into a `Duration`
+//! Takes a string such as `100ms`, `2s`, `5m 30s`, `1h10m` and converts it into a `Duration`.
+//!
 //! Takes a duration and makes it into string.
 //!
-//! The string format is `[0-9]+(ns|us|ms|[smhdwy])`
+//! The string format is multiples of `[0-9]+(ns|us|ms|[smhdwy])`
 //!
 //! ## Example
 //!
@@ -152,52 +153,49 @@ impl FromStr for DurationString {
     type Err = String;
 
     fn from_str(duration: &str) -> Result<Self, Self::Err> {
-        let mut format: String = String::from("");
-        let mut period: String = String::from("");
-
-        for c in duration.chars() {
-            if c.is_numeric() {
-                period.push(c);
+        let format_err =
+            "missing TimeDuration format - must be multiples of [0-9]+(ns|us|ms|[smhdwy])";
+        let duration: Vec<char> = duration.chars().filter(|c| !c.is_whitespace()).collect();
+        let mut grouped_durations: Vec<(Vec<char>, Vec<char>)> = vec![(vec![], vec![])];
+        for i in 0..duration.len() {
+            // Vector initialised with a starting element so unwraps should never panic
+            if duration[i].is_numeric() {
+                grouped_durations.last_mut().unwrap().0.push(duration[i]);
             } else {
-                format.push(c);
+                grouped_durations.last_mut().unwrap().1.push(duration[i]);
+            }
+            if i != duration.len() - 1 && !duration[i].is_numeric() && duration[i + 1].is_numeric()
+            {
+                // move to next group
+                grouped_durations.push((vec![], vec![]));
             }
         }
-
-        match period.parse::<u64>() {
-            Ok(period) => match format.as_str() {
-                "ns" => Ok(DurationString {
-                    inner: Duration::from_nanos(period),
-                }),
-                "us" => Ok(DurationString {
-                    inner: Duration::from_micros(period),
-                }),
-                "ms" => Ok(DurationString {
-                    inner: Duration::from_millis(period),
-                }),
-                "s" => Ok(DurationString {
-                    inner: Duration::from_secs(period),
-                }),
-                "m" => Ok(DurationString {
-                    inner: Duration::from_secs(period) * MINUTE_IN_SECONDS,
-                }),
-                "h" => Ok(DurationString {
-                    inner: Duration::from_secs(period) * HOUR_IN_SECONDS,
-                }),
-                "d" => Ok(DurationString {
-                    inner: Duration::from_secs(period) * DAY_IN_SECONDS,
-                }),
-                "w" => Ok(DurationString {
-                    inner: Duration::from_secs(period) * WEEK_IN_SECONDS,
-                }),
-                "y" => Ok(DurationString {
-                    inner: Duration::from_secs(period) * YEAR_IN_SECONDS,
-                }),
-                _ => Err(String::from(
-                    "missing TimeDuration format - must be [0-9]+(ns|us|ms|[smhdwy])",
-                )),
-            },
-            Err(err) => Err(err.to_string()),
+        if grouped_durations.is_empty() {
+            // `duration` either contains no numbers or no letters
+            return Err(format_err.to_string());
         }
+        let mut total_duration = Duration::new(0, 0);
+        for (period, format) in grouped_durations {
+            let period = match period.iter().collect::<String>().parse::<u64>() {
+                Ok(period) => Ok(period),
+                Err(err) => Err(err.to_string()),
+            }?;
+            total_duration += match format.iter().collect::<String>().as_ref() {
+                "ns" => Ok(Duration::from_nanos(period)),
+                "us" => Ok(Duration::from_micros(period)),
+                "ms" => Ok(Duration::from_millis(period)),
+                "s" => Ok(Duration::from_secs(period)),
+                "m" => Ok(Duration::from_secs(period) * MINUTE_IN_SECONDS),
+                "h" => Ok(Duration::from_secs(period) * HOUR_IN_SECONDS),
+                "d" => Ok(Duration::from_secs(period) * DAY_IN_SECONDS),
+                "w" => Ok(Duration::from_secs(period) * WEEK_IN_SECONDS),
+                "y" => Ok(Duration::from_secs(period) * YEAR_IN_SECONDS),
+                _ => Err(format_err.to_string()),
+            }?;
+        }
+        Ok(DurationString {
+            inner: total_duration,
+        })
     }
 }
 
@@ -296,6 +294,12 @@ mod tests {
         DurationString::from_string(String::from("ms")).expect_err("parsing \"ms\" should fail");
     }
 
+    #[test]
+    fn test_from_string_no_char() {
+        DurationString::from_string(String::from("1234"))
+            .expect_err("parsing \"1234\" should fail");
+    }
+
     // fn test_from_string
     #[test]
     fn test_from_string() {
@@ -340,6 +344,11 @@ mod tests {
     }
 
     #[test]
+    fn test_from_string_us_ms() {
+        test_parse_string("1ms100us", Duration::from_micros(1100));
+    }
+
+    #[test]
     fn test_from_string_ns() {
         test_parse_string("100ns", Duration::from_nanos(100));
     }
@@ -355,8 +364,23 @@ mod tests {
     }
 
     #[test]
+    fn test_from_string_m_s() {
+        test_parse_string("1m 1s", Duration::from_secs(61));
+    }
+
+    #[test]
     fn test_from_string_h() {
         test_parse_string("1h", Duration::from_secs(3600));
+    }
+
+    #[test]
+    fn test_from_string_h_m() {
+        test_parse_string("1h30m", Duration::from_secs(5400));
+    }
+
+    #[test]
+    fn test_from_string_h_m2() {
+        test_parse_string("1h128m", Duration::from_secs(11280));
     }
 
     #[test]
@@ -367,6 +391,11 @@ mod tests {
     #[test]
     fn test_from_string_w() {
         test_parse_string("1w", Duration::from_secs(604_800));
+    }
+
+    #[test]
+    fn test_from_string_w_s() {
+        test_parse_string("1w 1s", Duration::from_secs(604_801));
     }
 
     #[test]
