@@ -65,8 +65,8 @@ const WEEK_IN_NANO: u128 = 604_800_000_000_000;
 const DAY_IN_NANO: u128 = 86_400_000_000_000;
 const HOUR_IN_NANO: u128 = 3_600_000_000_000;
 const MINUTE_IN_NANO: u128 = 60_000_000_000;
-const SECOND_IN_NANO: u128 = 1000_000_000;
-const MILLISECOND_IN_NANO: u128 = 1000_000;
+const SECOND_IN_NANO: u128 = 1_000_000_000;
+const MILLISECOND_IN_NANO: u128 = 1_000_000;
 const MICROSECOND_IN_NANO: u128 = 1000;
 
 const HOUR_IN_SECONDS: u32 = 3600;
@@ -97,15 +97,15 @@ impl Display for DurationString {
     }
 }
 
-impl Into<Duration> for DurationString {
-    fn into(self) -> Duration {
-        self.inner
+impl From<DurationString> for Duration {
+    fn from(value: DurationString) -> Self {
+        value.inner
     }
 }
 
-impl Into<String> for DurationString {
-    fn into(self) -> String {
-        let ns = self.inner.as_nanos();
+impl From<DurationString> for String {
+    fn from(value: DurationString) -> Self {
+        let ns = value.inner.as_nanos();
         if ns % YEAR_IN_NANO == 0 {
             return (ns / YEAR_IN_NANO).to_string() + "y";
         }
@@ -130,7 +130,7 @@ impl Into<String> for DurationString {
         if ns % MICROSECOND_IN_NANO == 0 {
             return (ns / MICROSECOND_IN_NANO).to_string() + "us";
         }
-        return ns.to_string() + "ns";
+        ns.to_string() + "ns"
     }
 }
 
@@ -293,10 +293,7 @@ mod tests {
 
     #[test]
     fn test_string_int_overflow() {
-        match DurationString::from_string(String::from("ms")) {
-            Ok(_) => assert!(false, "parsing \"ms\" should fail"),
-            Err(_) => assert!(true),
-        }
+        DurationString::from_string(String::from("ms")).expect_err("parsing \"ms\" should fail");
     }
 
     // fn test_from_string
@@ -441,9 +438,7 @@ mod tests {
 
     #[test]
     fn test_from_string_invalid_string() {
-        match DurationString::try_from(String::from("1000x")) {
-            Ok(_) => assert!(false, "should have returned an Err"),
-            Err(_) => assert!(true),
-        }
+        DurationString::try_from(String::from("1000x"))
+            .expect_err("Should have failed with invalid format");
     }
 }
