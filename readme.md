@@ -5,10 +5,11 @@
 ![Crates.io](https://img.shields.io/crates/v/duration-string.svg)
 ![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)
 
-Takes a string such as `100ms`, `2s`, `5m` and converts it into a `Duration`
+Takes a string such as `100ms`, `2s`, `5m 30s`, `1h10m` and converts it into a `Duration`.
+
 Takes a duration and makes it into string.
 
-The string format is `[0-9]+(ns|us|ms|[smhdwy])`
+The string format is multiples of `[0-9]+(ns|us|ms|[smhdwy])`
 
 ### Example
 
