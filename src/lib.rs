@@ -35,6 +35,8 @@
 //! - Add `serde` to the dependency
 //! `duration-string = { version = "0.0.1", features = ["serde"] }`
 //! - Add derive to struct
+#![cfg_attr(feature = "serde", doc = "```")]
+#![cfg_attr(not(feature = "serde"), doc = "```ignore")]
 //! ```
 //! use serde::{Deserialize, Serialize};
 //! use serde_json;
