@@ -34,9 +34,9 @@ assert_eq!(d, String::from("100ms"));
 ```
 
 ### Serde support
-You can enable serialize/unserialize support by adding the feature `serde_support`
-- Add `serde_support` to the dependency
-`duration-string = { version = "0.0.1", features = ["serde_support"] }`
+You can enable serialize/unserialize support by adding the feature `serde`
+- Add `serde` to the dependency
+`duration-string = { version = "0.0.1", features = ["serde"] }`
 - Add derive to struct
 ```rust
 use serde::{Deserialize, Serialize};
