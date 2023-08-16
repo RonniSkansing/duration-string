@@ -285,7 +285,7 @@ mod tests {
             Ok(v) => {
                 assert_eq!(v.d.to_string(), "2m");
             }
-            Err(err) => assert!(false, "failed to deserialize: {}", err),
+            Err(err) => panic!("failed to deserialize: {}", err),
         }
     }
 
