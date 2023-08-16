@@ -261,8 +261,6 @@ mod tests {
     use super::*;
     #[cfg(feature = "serde")]
     use serde::{Deserialize, Serialize};
-    #[cfg(feature = "serde")]
-    use serde_json;
 
     #[cfg(feature = "serde")]
     #[derive(Serialize, Deserialize)]
@@ -287,7 +285,7 @@ mod tests {
             Ok(v) => {
                 assert_eq!(v.d.to_string(), "2m");
             }
-            Err(err) => assert!(false, "failed to deserialize: {}", err),
+            Err(err) => panic!("failed to deserialize: {}", err),
         }
     }
 
