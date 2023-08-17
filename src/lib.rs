@@ -157,6 +157,7 @@ impl FromStr for DurationString {
     fn from_str(duration: &str) -> Result<Self, Self::Err> {
         let format_err =
             "missing TimeDuration format - must be multiples of [0-9]+(ns|us|ms|[smhdwy])";
+        let overflow_err = "number too large to fit in target type";
         let duration: Vec<char> = duration.chars().filter(|c| !c.is_whitespace()).collect();
         let mut grouped_durations: Vec<(Vec<char>, Vec<char>)> = vec![(vec![], vec![])];
         for i in 0..duration.len() {
@@ -182,18 +183,26 @@ impl FromStr for DurationString {
                 Ok(period) => Ok(period),
                 Err(err) => Err(err.to_string()),
             }?;
-            total_duration += match format.iter().collect::<String>().as_ref() {
+            let multiply_period = |multiplier: u32| -> Result<Duration, Self::Err> {
+                Duration::from_secs(period)
+                    .checked_mul(multiplier)
+                    .ok_or(overflow_err.to_string())
+            };
+            let period_duration = match format.iter().collect::<String>().as_ref() {
                 "ns" => Ok(Duration::from_nanos(period)),
                 "us" => Ok(Duration::from_micros(period)),
                 "ms" => Ok(Duration::from_millis(period)),
                 "s" => Ok(Duration::from_secs(period)),
-                "m" => Ok(Duration::from_secs(period) * MINUTE_IN_SECONDS),
-                "h" => Ok(Duration::from_secs(period) * HOUR_IN_SECONDS),
-                "d" => Ok(Duration::from_secs(period) * DAY_IN_SECONDS),
-                "w" => Ok(Duration::from_secs(period) * WEEK_IN_SECONDS),
-                "y" => Ok(Duration::from_secs(period) * YEAR_IN_SECONDS),
+                "m" => multiply_period(MINUTE_IN_SECONDS),
+                "h" => multiply_period(HOUR_IN_SECONDS),
+                "d" => multiply_period(DAY_IN_SECONDS),
+                "w" => multiply_period(WEEK_IN_SECONDS),
+                "y" => multiply_period(YEAR_IN_SECONDS),
                 _ => Err(format_err.to_string()),
             }?;
+            total_duration = total_duration
+                .checked_add(period_duration)
+                .ok_or(overflow_err.to_string())?;
         }
         Ok(DurationString {
             inner: total_duration,
@@ -469,5 +478,23 @@ mod tests {
     fn test_from_string_invalid_string() {
         DurationString::try_from(String::from("1000x"))
             .expect_err("Should have failed with invalid format");
+    }
+
+    #[test]
+    fn test_try_from_string_overflow_y() {
+        let result = DurationString::try_from(String::from("584554530873y"));
+        assert_eq!(
+            result,
+            Err("number too large to fit in target type".to_string())
+        );
+    }
+
+    #[test]
+    fn test_try_from_string_overflow_y_w() {
+        let result = DurationString::try_from(String::from("584554530872y 29w"));
+        assert_eq!(
+            result,
+            Err("number too large to fit in target type".to_string())
+        );
     }
 }
