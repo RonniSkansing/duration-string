@@ -54,12 +54,15 @@
 
 #[cfg(feature = "serde")]
 use serde::de::Unexpected;
+use std::borrow::{Borrow, BorrowMut};
 use std::convert::TryFrom;
 #[cfg(feature = "serde")]
 use std::fmt;
 use std::fmt::Display;
 #[cfg(feature = "serde")]
 use std::marker::PhantomData;
+use std::num::ParseIntError;
+use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -78,17 +81,27 @@ const DAY_IN_SECONDS: u32 = 86_400;
 const WEEK_IN_SECONDS: u32 = 604_800;
 const YEAR_IN_SECONDS: u32 = 31_556_926;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct DurationString {
-    inner: Duration,
+pub type Result<T> = std::result::Result<T, Error>;
+
+#[derive(thiserror::Error, Clone, Debug, Eq, PartialEq)]
+pub enum Error {
+    #[error("missing time duration format, must be multiples of `[0-9]+(ns|us|ms|[smhdwy])`")]
+    Format,
+    #[error("number is too large to fit in target type")]
+    Overflow,
+    #[error(transparent)]
+    ParseInt(#[from] ParseIntError),
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct DurationString(Duration);
+
 impl DurationString {
-    pub fn new(duration: Duration) -> DurationString {
-        DurationString { inner: duration }
+    pub const fn new(duration: Duration) -> DurationString {
+        DurationString(duration)
     }
 
-    pub fn from_string(duration: String) -> Result<Self, String> {
+    pub fn from_string(duration: String) -> Result<Self> {
         DurationString::try_from(duration)
     }
 }
@@ -102,13 +115,13 @@ impl Display for DurationString {
 
 impl From<DurationString> for Duration {
     fn from(value: DurationString) -> Self {
-        value.inner
+        value.0
     }
 }
 
 impl From<DurationString> for String {
     fn from(value: DurationString) -> Self {
-        let ns = value.inner.as_nanos();
+        let ns = value.0.as_nanos();
         if ns % YEAR_IN_NANO == 0 {
             return (ns / YEAR_IN_NANO).to_string() + "y";
         }
@@ -139,25 +152,22 @@ impl From<DurationString> for String {
 
 impl From<Duration> for DurationString {
     fn from(duration: Duration) -> Self {
-        DurationString { inner: duration }
+        DurationString(duration)
     }
 }
 
 impl TryFrom<String> for DurationString {
-    type Error = String;
+    type Error = Error;
 
-    fn try_from(duration: String) -> Result<Self, Self::Error> {
+    fn try_from(duration: String) -> std::result::Result<Self, Self::Error> {
         duration.parse()
     }
 }
 
 impl FromStr for DurationString {
-    type Err = String;
+    type Err = Error;
 
-    fn from_str(duration: &str) -> Result<Self, Self::Err> {
-        let format_err =
-            "missing TimeDuration format - must be multiples of [0-9]+(ns|us|ms|[smhdwy])";
-        let overflow_err = "number too large to fit in target type";
+    fn from_str(duration: &str) -> std::result::Result<Self, Self::Err> {
         let duration: Vec<char> = duration.chars().filter(|c| !c.is_whitespace()).collect();
         let mut grouped_durations: Vec<(Vec<char>, Vec<char>)> = vec![(vec![], vec![])];
         for i in 0..duration.len() {
@@ -175,18 +185,18 @@ impl FromStr for DurationString {
         }
         if grouped_durations.is_empty() {
             // `duration` either contains no numbers or no letters
-            return Err(format_err.to_string());
+            return Err(Error::Format);
         }
         let mut total_duration = Duration::new(0, 0);
         for (period, format) in grouped_durations {
             let period = match period.iter().collect::<String>().parse::<u64>() {
                 Ok(period) => Ok(period),
-                Err(err) => Err(err.to_string()),
+                Err(err) => Err(Error::ParseInt(err)),
             }?;
-            let multiply_period = |multiplier: u32| -> Result<Duration, Self::Err> {
+            let multiply_period = |multiplier: u32| -> std::result::Result<Duration, Self::Err> {
                 Duration::from_secs(period)
                     .checked_mul(multiplier)
-                    .ok_or(overflow_err.to_string())
+                    .ok_or(Error::Overflow)
             };
             let period_duration = match format.iter().collect::<String>().as_ref() {
                 "ns" => Ok(Duration::from_nanos(period)),
@@ -198,15 +208,39 @@ impl FromStr for DurationString {
                 "d" => multiply_period(DAY_IN_SECONDS),
                 "w" => multiply_period(WEEK_IN_SECONDS),
                 "y" => multiply_period(YEAR_IN_SECONDS),
-                _ => Err(format_err.to_string()),
+                _ => Err(Error::Format),
             }?;
             total_duration = total_duration
                 .checked_add(period_duration)
-                .ok_or(overflow_err.to_string())?;
+                .ok_or(Error::Overflow)?;
         }
-        Ok(DurationString {
-            inner: total_duration,
-        })
+        Ok(DurationString(total_duration))
+    }
+}
+
+impl Deref for DurationString {
+    type Target = Duration;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for DurationString {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl Borrow<Duration> for DurationString {
+    fn borrow(&self) -> &Duration {
+        &self.0
+    }
+}
+
+impl BorrowMut<Duration> for DurationString {
+    fn borrow_mut(&mut self) -> &mut Duration {
+        &mut self.0
     }
 }
 
@@ -232,14 +266,14 @@ impl<'de> serde::de::Visitor<'de> for DurationStringVisitor {
         formatter.write_str("string")
     }
 
-    fn visit_str<E>(self, string: &str) -> Result<Self::Value, E>
+    fn visit_str<E>(self, string: &str) -> std::result::Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
         match DurationString::from_string(string.to_string()) {
             Ok(d) => Ok(d),
             Err(s) => Err(serde::de::Error::invalid_value(
-                Unexpected::Str(s.as_str()),
+                Unexpected::Str(&s.to_string()),
                 &self,
             )),
         }
@@ -248,7 +282,7 @@ impl<'de> serde::de::Visitor<'de> for DurationStringVisitor {
 
 #[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for DurationString {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
@@ -258,7 +292,7 @@ impl<'de> serde::Deserialize<'de> for DurationString {
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for DurationString {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -483,18 +517,12 @@ mod tests {
     #[test]
     fn test_try_from_string_overflow_y() {
         let result = DurationString::try_from(String::from("584554530873y"));
-        assert_eq!(
-            result,
-            Err("number too large to fit in target type".to_string())
-        );
+        assert_eq!(result, Err(Error::Overflow));
     }
 
     #[test]
     fn test_try_from_string_overflow_y_w() {
         let result = DurationString::try_from(String::from("584554530872y 29w"));
-        assert_eq!(
-            result,
-            Err("number too large to fit in target type".to_string())
-        );
+        assert_eq!(result, Err(Error::Overflow));
     }
 }
