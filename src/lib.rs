@@ -352,15 +352,13 @@ mod tests {
 
     #[test]
     fn test_display_trait() {
-        let d = DurationString::try_from(Duration::from_millis(100));
-        assert_eq!("100ms", format!("{}", d.unwrap()));
+        let d = DurationString::from(Duration::from_millis(100));
+        assert_eq!("100ms", format!("{}", d));
     }
 
     #[test]
     fn test_from_duration() {
-        let d: String = DurationString::try_from(Duration::from_millis(100))
-            .unwrap()
-            .into();
+        let d: String = DurationString::from(Duration::from_millis(100)).into();
         assert_eq!(d, String::from("100ms"));
     }
 
