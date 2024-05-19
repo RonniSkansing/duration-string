@@ -1,43 +1,66 @@
-//! `duration-string` is a string to duration and visa-versa lib.
+//! `duration-string` is a library to convert from `String` to `Duration` and vice-versa.
 //!
 //! ![Crates.io](https://img.shields.io/crates/v/duration-string.svg)
 //! ![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)
 //!
-//! Takes a string such as `100ms`, `2s`, `5m 30s`, `1h10m` and converts it into a `Duration`.
+//! Takes a `String` such as `100ms`, `2s`, `5m 30s`, `1h10m` and converts it into a `Duration`.
 //!
-//! Takes a duration and makes it into string.
+//! Takes a `Duration` and converts it into `String`.
 //!
-//! The string format is multiples of `[0-9]+(ns|us|ms|[smhdwy])`
+//! The `String` format is a multiply of `[0-9]+(ns|us|ms|[smhdwy])`
 //!
 //! ## Example
 //!
-//! String to duration
-//! ```
+//! `String` to `Duration`:
+//!
+//! ```rust
+//! use std::convert::TryFrom;
 //! use duration_string::DurationString;
 //! use std::time::Duration;
-//! let d: Duration = DurationString::from_string(String::from("100ms")).unwrap().into();
+//!
+//! let d: Duration = DurationString::try_from(String::from("100ms")).unwrap().into();
 //! assert_eq!(d, Duration::from_millis(100));
-//! ```
-//! duration to string
-//! ```
-//! use std::convert::TryFrom;
-//! use duration_string::*;
-//! use std::time::Duration;
-//! let d: String = DurationString::from(Duration::from_millis(100)).into();
-//! assert_eq!(d, String::from("100ms"));
-//! // Alternatively:
+//!
+//! // Alternatively
 //! let d: Duration = "100ms".parse::<DurationString>().unwrap().into();
 //! assert_eq!(d, Duration::from_millis(100));
 //! ```
 //!
+//! `Duration` to `String`:
+//!
+//! ```rust
+//! use std::convert::TryFrom;
+//! use duration_string::*;
+//! use std::time::Duration;
+//!
+//! let d: String = DurationString::from(Duration::from_millis(100)).into();
+//! assert_eq!(d, String::from("100ms"));
+//! ```
+//!
 //! ## Serde support
-//! You can enable serialize/unserialize support by adding the feature `serde`
-//! - Add `serde` to the dependency
-//! `duration-string = { version = "0.0.1", features = ["serde"] }`
+//!
+//! You can enable _serialization/deserialization_ support by adding the feature `serde`
+//!
+//! - Add `serde` feature
+//!
+//!    ```toml
+//!    duration-string = { version = "0.3.0", features = ["serde"] }
+//!    ```
+//!
 //! - Add derive to struct
+//!
+//!    ```rust
+//!    use serde::{Deserialize, Serialize};
+//!
+//!    #[derive(Serialize, Deserialize)]
+//!    struct Foo {
+//!      duration: DurationString
+//!    }
+//!    ```
+//!
 #![cfg_attr(feature = "serde", doc = "```")]
 #![cfg_attr(not(feature = "serde"), doc = "```ignore")]
-//! ```
+//! ```rust
 //! use serde::{Deserialize, Serialize};
 //! use serde_json;
 //! use duration_string::DurationString;
@@ -58,7 +81,6 @@ use std::borrow::{Borrow, BorrowMut};
 use std::convert::TryFrom;
 #[cfg(feature = "serde")]
 use std::fmt;
-use std::fmt::Display;
 #[cfg(feature = "serde")]
 use std::marker::PhantomData;
 use std::num::ParseIntError;
@@ -93,9 +115,12 @@ pub enum Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Format => write!(f, "missing time duration format, must be multiples of `[0-9]+(ns|us|ms|[smhdwy])`"),
+            Self::Format => write!(
+                f,
+                "missing time duration format, must be multiples of `[0-9]+(ns|us|ms|[smhdwy])`"
+            ),
             Self::Overflow => write!(f, "number is too large to fit in target type"),
-            Self::ParseInt(err) => write!(f, "{}",err)
+            Self::ParseInt(err) => write!(f, "{err}"),
         }
     }
 }
@@ -104,7 +129,7 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Format | Self::Overflow => None,
-            Self::ParseInt(err)=> Some(err)
+            Self::ParseInt(err) => Some(err),
         }
     }
 }
@@ -119,19 +144,21 @@ impl From<ParseIntError> for Error {
 pub struct DurationString(Duration);
 
 impl DurationString {
+    #[must_use]
     pub const fn new(duration: Duration) -> DurationString {
         DurationString(duration)
     }
 
+    #[allow(clippy::missing_errors_doc)]
     pub fn from_string(duration: String) -> Result<Self> {
         DurationString::try_from(duration)
     }
 }
 
-impl Display for DurationString {
+impl std::fmt::Display for DurationString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s: String = (*self).into();
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -375,7 +402,7 @@ mod tests {
     #[test]
     fn test_display_trait() {
         let d = DurationString::from(Duration::from_millis(100));
-        assert_eq!("100ms", format!("{}", d));
+        assert_eq!("100ms", format!("{d}"));
     }
 
     #[test]
