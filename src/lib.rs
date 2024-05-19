@@ -83,17 +83,39 @@ const YEAR_IN_SECONDS: u32 = 31_556_926;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(thiserror::Error, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Error {
-    #[error("missing time duration format, must be multiples of `[0-9]+(ns|us|ms|[smhdwy])`")]
     Format,
-    #[error("number is too large to fit in target type")]
     Overflow,
-    #[error(transparent)]
-    ParseInt(#[from] ParseIntError),
+    ParseInt(ParseIntError),
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Format => write!(f, "missing time duration format, must be multiples of `[0-9]+(ns|us|ms|[smhdwy])`"),
+            Self::Overflow => write!(f, "number is too large to fit in target type"),
+            Self::ParseInt(err) => write!(f, "{}",err)
+        }
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Format | Self::Overflow => None,
+            Self::ParseInt(err)=> Some(err)
+        }
+    }
+}
+
+impl From<ParseIntError> for Error {
+    fn from(value: ParseIntError) -> Self {
+        Self::ParseInt(value)
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct DurationString(Duration);
 
 impl DurationString {

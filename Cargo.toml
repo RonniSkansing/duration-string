@@ -22,7 +22,6 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1.0.105", optional = true, features = ["derive"] }
-thiserror = "1.0.60"
 
 [dev-dependencies]
 serde_json = { version = "1.0.49" }
