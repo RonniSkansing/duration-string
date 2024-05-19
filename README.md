@@ -52,6 +52,7 @@ You can enable _serialization/deserialization_ support by adding the feature `se
 - Add derive to struct
 
    ```rust
+   use duration_string::DurationString;
    use serde::{Deserialize, Serialize};
 
    #[derive(Serialize, Deserialize)]

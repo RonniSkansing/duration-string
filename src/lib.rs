@@ -49,7 +49,8 @@
 //!
 //! - Add derive to struct
 //!
-//!    ```rust
+//!    ```ignore
+//!    use duration_string::DurationString;
 //!    use serde::{Deserialize, Serialize};
 //!
 //!    #[derive(Serialize, Deserialize)]
@@ -58,12 +59,12 @@
 //!    }
 //!    ```
 //!
-#![cfg_attr(feature = "serde", doc = "```")]
+#![cfg_attr(feature = "serde", doc = "```rust")]
 #![cfg_attr(not(feature = "serde"), doc = "```ignore")]
-//! ```rust
+//! ```
+//! use duration_string::DurationString;
 //! use serde::{Deserialize, Serialize};
 //! use serde_json;
-//! use duration_string::DurationString;
 //!
 //! #[derive(Serialize, Deserialize)]
 //! struct SerdeSupport {
