@@ -2,6 +2,8 @@
 
 `duration-string` is a library to convert from `String` to `Duration` and vice-versa.
 
+Uses zero dependencies unless `serde` feature is enabled.
+
 [![build](https://github.com/RonniSkansing/duration-string/actions/workflows/build.yaml/badge.svg)](https://github.com/RonniSkansing/duration-string/actions/workflows/build.yaml)
 ![Crates.io](https://img.shields.io/crates/v/duration-string.svg)
 
