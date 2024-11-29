@@ -82,10 +82,11 @@ use std::borrow::{Borrow, BorrowMut};
 use std::convert::TryFrom;
 #[cfg(feature = "serde")]
 use std::fmt;
+use std::iter::Sum;
 #[cfg(feature = "serde")]
 use std::marker::PhantomData;
 use std::num::ParseIntError;
-use std::ops::{Deref, DerefMut};
+use std::ops::{Add, AddAssign, Deref, DerefMut, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -291,6 +292,164 @@ impl Borrow<Duration> for DurationString {
 impl BorrowMut<Duration> for DurationString {
     fn borrow_mut(&mut self) -> &mut Duration {
         &mut self.0
+    }
+}
+
+impl PartialEq<Duration> for DurationString {
+    fn eq(&self, other: &Duration) -> bool {
+        self.0.eq(other)
+    }
+}
+
+impl PartialEq<DurationString> for Duration {
+    fn eq(&self, other: &DurationString) -> bool {
+        self.eq(&other.0)
+    }
+}
+
+impl PartialOrd<Duration> for DurationString {
+    fn partial_cmp(&self, other: &Duration) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(other)
+    }
+}
+
+impl PartialOrd<DurationString> for Duration {
+    fn partial_cmp(&self, other: &DurationString) -> Option<std::cmp::Ordering> {
+        self.partial_cmp(&other.0)
+    }
+}
+
+impl Add for DurationString {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self::Output {
+        Self::new(self.0.add(other.0))
+    }
+}
+
+impl Add<Duration> for DurationString {
+    type Output = Self;
+
+    fn add(self, other: Duration) -> Self::Output {
+        Self::new(self.0.add(other))
+    }
+}
+
+impl Add<DurationString> for Duration {
+    type Output = Self;
+
+    fn add(self, other: DurationString) -> Self::Output {
+        self.add(other.0)
+    }
+}
+
+impl AddAssign for DurationString {
+    fn add_assign(&mut self, other: Self) {
+        self.0.add_assign(other.0);
+    }
+}
+
+impl AddAssign<Duration> for DurationString {
+    fn add_assign(&mut self, other: Duration) {
+        self.0.add_assign(other);
+    }
+}
+
+impl AddAssign<DurationString> for Duration {
+    fn add_assign(&mut self, other: DurationString) {
+        self.add_assign(other.0);
+    }
+}
+
+impl Sub for DurationString {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self::Output {
+        Self::new(self.0.sub(other.0))
+    }
+}
+
+impl Sub<Duration> for DurationString {
+    type Output = Self;
+
+    fn sub(self, other: Duration) -> Self::Output {
+        Self::new(self.0.sub(other))
+    }
+}
+
+impl Sub<DurationString> for Duration {
+    type Output = Self;
+
+    fn sub(self, other: DurationString) -> Self::Output {
+        self.sub(other.0)
+    }
+}
+
+impl SubAssign for DurationString {
+    fn sub_assign(&mut self, other: Self) {
+        self.0.sub_assign(other.0);
+    }
+}
+
+impl SubAssign<Duration> for DurationString {
+    fn sub_assign(&mut self, other: Duration) {
+        self.0.sub_assign(other);
+    }
+}
+
+impl SubAssign<DurationString> for Duration {
+    fn sub_assign(&mut self, other: DurationString) {
+        self.sub_assign(other.0);
+    }
+}
+
+impl Mul<u32> for DurationString {
+    type Output = Self;
+
+    fn mul(self, other: u32) -> Self::Output {
+        Self::new(self.0.mul(other))
+    }
+}
+
+impl Mul<DurationString> for u32 {
+    type Output = DurationString;
+
+    fn mul(self, other: DurationString) -> Self::Output {
+        DurationString::new(self.mul(other.0))
+    }
+}
+
+impl MulAssign<u32> for DurationString {
+    fn mul_assign(&mut self, other: u32) {
+        self.0.mul_assign(other);
+    }
+}
+
+impl Div<u32> for DurationString {
+    type Output = Self;
+
+    fn div(self, other: u32) -> Self::Output {
+        Self::new(self.0.div(other))
+    }
+}
+
+impl DivAssign<u32> for DurationString {
+    fn div_assign(&mut self, other: u32) {
+        self.0.div_assign(other);
+    }
+}
+
+impl Sum for DurationString {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        Self::new(Duration::sum(iter.map(|duration_string| duration_string.0)))
+    }
+}
+
+impl<'a> Sum<&'a DurationString> for DurationString {
+    fn sum<I: Iterator<Item = &'a DurationString>>(iter: I) -> Self {
+        Self::new(Duration::sum(
+            iter.map(|duration_string| &duration_string.0),
+        ))
     }
 }
 
@@ -572,5 +731,188 @@ mod tests {
     fn test_try_from_string_overflow_y_w() {
         let result = DurationString::try_from(String::from("584554530872y 29w"));
         assert_eq!(result, Err(Error::Overflow));
+    }
+
+    #[test]
+    fn test_eq() {
+        let duration = Duration::from_secs(1);
+        assert_eq!(DurationString::new(duration), DurationString::new(duration));
+        assert_eq!(DurationString::new(duration), duration);
+        assert_eq!(duration, DurationString::new(duration));
+    }
+
+    #[test]
+    fn test_ne() {
+        let a = Duration::from_secs(1);
+        let b = Duration::from_secs(2);
+        assert_ne!(DurationString::new(a), DurationString::new(b));
+        assert_ne!(DurationString::new(a), b);
+        assert_ne!(a, DurationString::new(b));
+    }
+
+    #[test]
+    fn test_lt() {
+        let a = Duration::from_secs(1);
+        let b = Duration::from_secs(2);
+        assert!(DurationString::new(a) < DurationString::new(b));
+        assert!(DurationString::new(a) < b);
+        assert!(a < DurationString::new(b));
+    }
+
+    #[test]
+    fn test_le() {
+        let a = Duration::from_secs(1);
+        let b = Duration::from_secs(2);
+        assert!(DurationString::new(a) <= DurationString::new(b));
+        assert!(DurationString::new(a) <= b);
+        assert!(a <= DurationString::new(b));
+        let a = Duration::from_secs(1);
+        let b = Duration::from_secs(1);
+        assert!(DurationString::new(a) <= DurationString::new(b));
+        assert!(DurationString::new(a) <= b);
+        assert!(a <= DurationString::new(b));
+    }
+
+    #[test]
+    fn test_gt() {
+        let a = Duration::from_secs(2);
+        let b = Duration::from_secs(1);
+        assert!(DurationString::new(a) > DurationString::new(b));
+        assert!(DurationString::new(a) > b);
+        assert!(a > DurationString::new(b));
+    }
+
+    #[test]
+    fn test_ge() {
+        let a = Duration::from_secs(2);
+        let b = Duration::from_secs(1);
+        assert!(DurationString::new(a) >= DurationString::new(b));
+        assert!(DurationString::new(a) >= b);
+        assert!(a >= DurationString::new(b));
+        let a = Duration::from_secs(1);
+        let b = Duration::from_secs(1);
+        assert!(DurationString::new(a) >= DurationString::new(b));
+        assert!(DurationString::new(a) >= b);
+        assert!(a >= DurationString::new(b));
+    }
+
+    #[test]
+    fn test_add() {
+        let a = Duration::from_secs(1);
+        let b = Duration::from_secs(1);
+        let result = a + b;
+        assert_eq!(
+            DurationString::new(a) + DurationString::new(b),
+            DurationString::new(result)
+        );
+        assert_eq!(DurationString::new(a) + b, DurationString::new(result));
+        assert_eq!(a + DurationString::new(b), result);
+    }
+
+    #[test]
+    fn test_add_assign() {
+        let a = Duration::from_secs(1);
+        let b = Duration::from_secs(1);
+        let result = a + b;
+        let mut duration_string_duration_string = DurationString::new(a);
+        duration_string_duration_string += DurationString::new(b);
+        let mut duration_string_duration = DurationString::new(a);
+        duration_string_duration += b;
+        let mut duration_duration_string = a;
+        duration_duration_string += DurationString::new(b);
+        assert_eq!(duration_string_duration_string, DurationString::new(result));
+        assert_eq!(duration_string_duration, DurationString::new(result));
+        assert_eq!(duration_duration_string, result);
+    }
+
+    #[test]
+    fn test_sub() {
+        let a = Duration::from_secs(1);
+        let b = Duration::from_secs(1);
+        let result = a - b;
+        assert_eq!(
+            DurationString::new(a) - DurationString::new(b),
+            DurationString::new(result)
+        );
+        assert_eq!(DurationString::new(a) - b, DurationString::new(result));
+        assert_eq!(a - DurationString::new(b), result);
+    }
+
+    #[test]
+    fn test_sub_assign() {
+        let a = Duration::from_secs(1);
+        let b = Duration::from_secs(1);
+        let result = a - b;
+        let mut duration_string_duration_string = DurationString::new(a);
+        duration_string_duration_string -= DurationString::new(b);
+        let mut duration_string_duration = DurationString::new(a);
+        duration_string_duration -= b;
+        let mut duration_duration_string = a;
+        duration_duration_string -= DurationString::new(b);
+        assert_eq!(duration_string_duration_string, DurationString::new(result));
+        assert_eq!(duration_string_duration, DurationString::new(result));
+        assert_eq!(duration_duration_string, result);
+    }
+
+    #[test]
+    fn test_mul() {
+        let a = 2u32;
+        let a_duration = DurationString::new(Duration::from_secs(a.into()));
+        let b = 4u32;
+        let b_duration = DurationString::new(Duration::from_secs(b.into()));
+        let result = DurationString::new(Duration::from_secs((a * b).into()));
+        assert_eq!(a_duration * b, result);
+        assert_eq!(a * b_duration, result);
+    }
+
+    #[test]
+    fn test_mul_assign() {
+        let a = 2u32;
+        let b = 4u32;
+        let result = DurationString::new(Duration::from_secs((a * b).into()));
+        let mut duration_string_u32 = DurationString::new(Duration::from_secs(a.into()));
+        duration_string_u32 *= b;
+        assert_eq!(duration_string_u32, result);
+    }
+
+    #[test]
+    fn test_div() {
+        let a = 8u32;
+        let a_duration = DurationString::new(Duration::from_secs(a.into()));
+        let b = 4u32;
+        let result = DurationString::new(Duration::from_secs((a / b).into()));
+        assert_eq!(a_duration / b, result);
+    }
+
+    #[test]
+    fn test_div_assign() {
+        let a = 8u32;
+        let b = 4u32;
+        let result = DurationString::new(Duration::from_secs((a / b).into()));
+        let mut duration_string_u32 = DurationString::new(Duration::from_secs(a.into()));
+        duration_string_u32 /= b;
+        assert_eq!(duration_string_u32, result);
+    }
+
+    #[test]
+    fn test_sum() {
+        let durations = [
+            Duration::from_secs(1),
+            Duration::from_secs(2),
+            Duration::from_secs(3),
+            Duration::from_secs(4),
+            Duration::from_secs(5),
+            Duration::from_secs(6),
+            Duration::from_secs(7),
+            Duration::from_secs(8),
+            Duration::from_secs(9),
+        ];
+        let result = DurationString::new(durations.iter().sum());
+        let durations = durations
+            .iter()
+            .map(|duration| Into::<DurationString>::into(*duration))
+            .collect::<Vec<_>>();
+        assert_eq!(durations.iter().sum::<DurationString>(), result);
+        assert_eq!(durations.into_iter().sum::<DurationString>(), result);
     }
 }
