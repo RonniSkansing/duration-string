@@ -215,6 +215,14 @@ impl TryFrom<String> for DurationString {
     }
 }
 
+impl TryFrom<&str> for DurationString {
+    type Error = Error;
+
+    fn try_from(duration: &str) -> std::result::Result<Self, Self::Error> {
+        duration.parse()
+    }
+}
+
 impl FromStr for DurationString {
     type Err = Error;
 
@@ -657,6 +665,14 @@ mod tests {
     #[test]
     fn test_into_string_ms() {
         let d: String = DurationString::try_from(String::from("100ms"))
+            .unwrap()
+            .into();
+        assert_eq!(d, "100ms");
+    }
+
+    #[test]
+    fn test_into_string_ms_str() {
+        let d: String = DurationString::try_from("100ms")
             .unwrap()
             .into();
         assert_eq!(d, "100ms");
