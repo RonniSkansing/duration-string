@@ -468,6 +468,7 @@ impl DurationStringVisitor {
 }
 
 #[cfg(feature = "serde")]
+#[allow(clippy::needless_lifetimes)]
 impl<'de> serde::de::Visitor<'de> for DurationStringVisitor {
     type Value = DurationString;
 
