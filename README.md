@@ -48,7 +48,7 @@ You can enable _serialization/deserialization_ support by adding the feature `se
 - Add `serde` feature
 
    ```toml
-   duration-string = { version = "0.5.0", features = ["serde"] }
+   duration-string = { version = "0.5.1", features = ["serde"] }
    ```
 
 - Add derive to struct
