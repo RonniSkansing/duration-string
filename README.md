@@ -2,7 +2,7 @@
 
 `duration-string` is a library to convert from `String` to `Duration` and vice-versa.
 
-Uses zero dependencies unless `serde` feature is enabled.
+Uses zero dependencies unless `serde` feature is enabled. 
 
 [![build](https://github.com/RonniSkansing/duration-string/actions/workflows/build.yaml/badge.svg)](https://github.com/RonniSkansing/duration-string/actions/workflows/build.yaml)
 ![Crates.io](https://img.shields.io/crates/v/duration-string.svg)
@@ -48,7 +48,7 @@ You can enable _serialization/deserialization_ support by adding the feature `se
 - Add `serde` feature
 
    ```toml
-   duration-string = { version = "0.4.0", features = ["serde"] }
+   duration-string = { version = "0.5.0", features = ["serde"] }
    ```
 
 - Add derive to struct

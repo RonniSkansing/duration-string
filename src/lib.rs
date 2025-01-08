@@ -44,7 +44,7 @@
 //! - Add `serde` feature
 //!
 //!    ```toml
-//!    duration-string = { version = "0.3.0", features = ["serde"] }
+//!    duration-string = { version = "0.5.0", features = ["serde"] }
 //!    ```
 //!
 //! - Add derive to struct
