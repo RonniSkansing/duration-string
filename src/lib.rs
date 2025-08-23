@@ -61,6 +61,7 @@
 //!
 #![cfg_attr(feature = "serde", doc = "```rust")]
 #![cfg_attr(not(feature = "serde"), doc = "```ignore")]
+#![allow(clippy::doc_markdown)]
 //! ```
 //! use duration_string::DurationString;
 //! use serde::{Deserialize, Serialize};
@@ -538,7 +539,7 @@ mod tests {
             Ok(v) => {
                 assert_eq!(v.d.to_string(), "2m");
             }
-            Err(err) => panic!("failed to deserialize: {}", err),
+            Err(err) => panic!("failed to deserialize: {err}"),
         }
     }
 
