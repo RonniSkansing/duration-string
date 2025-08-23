@@ -61,6 +61,7 @@
 //!
 #![cfg_attr(feature = "serde", doc = "```rust")]
 #![cfg_attr(not(feature = "serde"), doc = "```ignore")]
+#![allow(clippy::doc_markdown)]
 //! ```
 //! use duration_string::DurationString;
 //! use serde::{Deserialize, Serialize};
@@ -469,7 +470,7 @@ impl DurationStringVisitor {
 
 #[cfg(feature = "serde")]
 #[allow(clippy::needless_lifetimes)]
-impl<'de> serde::de::Visitor<'de> for DurationStringVisitor {
+impl serde::de::Visitor<'_> for DurationStringVisitor {
     type Value = DurationString;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -538,7 +539,7 @@ mod tests {
             Ok(v) => {
                 assert_eq!(v.d.to_string(), "2m");
             }
-            Err(err) => panic!("failed to deserialize: {}", err),
+            Err(err) => panic!("failed to deserialize: {err}"),
         }
     }
 
