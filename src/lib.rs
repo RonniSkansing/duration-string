@@ -469,7 +469,7 @@ impl DurationStringVisitor {
 
 #[cfg(feature = "serde")]
 #[allow(clippy::needless_lifetimes)]
-impl<'de> serde::de::Visitor<'de> for DurationStringVisitor {
+impl serde::de::Visitor<'_> for DurationStringVisitor {
     type Value = DurationString;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
